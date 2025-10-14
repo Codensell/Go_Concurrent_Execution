@@ -45,27 +45,25 @@ func main() {
 	signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		i := 0
-		for {
-			deadline := time.Now().Add(interval)
-			for {
-				select {
-				case <-done:
-					return
-				default:
-					if !time.Now().Before(deadline) {
-						goto TICK
-					}
-					time.Sleep(50 * time.Millisecond)
-				}
+	i := 0
+	next := start.Add(interval)
+	for {
+		select {
+		case <-done:
+			return
+		default:
+			if time.Now().Before(next) {
+				time.Sleep(50 * time.Millisecond)
+				continue
 			}
-		TICK:
+			// tick
 			i++
 			sec := int(time.Since(start) / time.Second)
 			fmt.Printf("Tick %d since %d\n", i, sec)
+			next = next.Add(interval)
 		}
-	}()
-
+	}
+}()
 	<-sigc
 	close(done)
 	fmt.Println("Termination")
